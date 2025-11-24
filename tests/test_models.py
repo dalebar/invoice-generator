@@ -16,7 +16,6 @@ class TestBusinessDetails:
         """Test that BusinessDetails can be created with all fields."""
         assert business_details.name == "Test Business"
         assert business_details.address_line1 == "123 Test Street"
-        assert business_details.address_line2 == "Test Building"
         assert business_details.city == "Test City"
         assert business_details.postcode == "TE1 1ST"
         assert business_details.email == "test@example.com"
@@ -27,14 +26,13 @@ class TestBusinessDetails:
         """Test that BusinessDetails is a proper dataclass."""
         data = asdict(business_details)
         assert isinstance(data, dict)
-        assert len(data) == 8
+        assert len(data) == 7
 
     def test_business_details_equality(self):
         """Test that two identical BusinessDetails are equal."""
         details1 = BusinessDetails(
             name="Test",
             address_line1="Line 1",
-            address_line2="Line 2",
             city="City",
             postcode="AB1 2CD",
             email="test@test.com",
@@ -44,7 +42,6 @@ class TestBusinessDetails:
         details2 = BusinessDetails(
             name="Test",
             address_line1="Line 1",
-            address_line2="Line 2",
             city="City",
             postcode="AB1 2CD",
             email="test@test.com",

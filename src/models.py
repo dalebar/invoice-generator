@@ -11,7 +11,6 @@ class BusinessDetails:
 
     name: str
     address_line1: str
-    address_line2: str
     city: str
     postcode: str
     email: str

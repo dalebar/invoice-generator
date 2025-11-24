@@ -138,18 +138,10 @@ class InvoicePDFGenerator:
             Paragraph("<b>From:</b>", self.styles["SectionHeader"]),
             Paragraph(self.business.name, self.styles["AddressText"]),
             Paragraph(self.business.address_line1, self.styles["AddressText"]),
+            Paragraph(self.business.city, self.styles["AddressText"]),
+            Paragraph(self.business.postcode, self.styles["AddressText"]),
+            Paragraph(self.business.email, self.styles["AddressText"]),
         ]
-        if self.business.address_line2:
-            from_lines.append(
-                Paragraph(self.business.address_line2, self.styles["AddressText"])
-            )
-        from_lines.extend(
-            [
-                Paragraph(self.business.city, self.styles["AddressText"]),
-                Paragraph(self.business.postcode, self.styles["AddressText"]),
-                Paragraph(self.business.email, self.styles["AddressText"]),
-            ]
-        )
 
         # Build To address
         to_lines = [
@@ -184,6 +176,8 @@ class InvoicePDFGenerator:
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
                 ]
             )
         )
@@ -209,7 +203,7 @@ class InvoicePDFGenerator:
             for label, value in details
         ]
 
-        table = Table(data, colWidths=[35 * mm, 60 * mm])
+        table = Table(data, colWidths=[35 * mm, 60 * mm], hAlign="LEFT")
         table.setStyle(
             TableStyle(
                 [

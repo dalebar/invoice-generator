@@ -19,7 +19,6 @@ def business_details() -> BusinessDetails:
     return BusinessDetails(
         name="Test Business",
         address_line1="123 Test Street",
-        address_line2="Test Building",
         city="Test City",
         postcode="TE1 1ST",
         email="test@example.com",
@@ -105,7 +104,6 @@ def temp_config_file(tmp_path: Path, business_details: BusinessDetails) -> Path:
     config_data = {
         "name": business_details.name,
         "address_line1": business_details.address_line1,
-        "address_line2": business_details.address_line2,
         "city": business_details.city,
         "postcode": business_details.postcode,
         "email": business_details.email,

@@ -39,7 +39,7 @@ def load_business_details(config_path: str = "config/business_details.json") -> 
         raise ValueError(f"Invalid JSON in configuration file: {e}")
 
     required_fields = [
-        "name", "address_line1", "address_line2", "city",
+        "name", "address_line1", "city",
         "postcode", "email", "sort_code", "account_number"
     ]
 
@@ -50,7 +50,6 @@ def load_business_details(config_path: str = "config/business_details.json") -> 
     return BusinessDetails(
         name=data["name"],
         address_line1=data["address_line1"],
-        address_line2=data["address_line2"],
         city=data["city"],
         postcode=data["postcode"],
         email=data["email"],
