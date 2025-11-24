@@ -12,7 +12,9 @@ CLI tool for generating professional PDF invoices for a man-and-van waste remova
 ## Installation
 
 ```bash
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 ```
 
 ## Usage
@@ -30,6 +32,15 @@ Follow the interactive prompts to enter:
 
 The PDF will be saved to the `invoices/` directory.
 
+## Testing
+
+```bash
+pytest                              # Run all tests
+pytest -v                           # Verbose output
+pytest --cov=src                    # With coverage report
+pytest --cov=src --cov-report=html  # HTML coverage report
+```
+
 ## Project Structure
 
 ```
@@ -39,6 +50,12 @@ invoice-generator/
 │   ├── pdf_generator.py   # PDF creation
 │   ├── invoice_manager.py # Invoice numbering & persistence
 │   └── cli.py             # Interactive CLI
+├── tests/
+│   ├── conftest.py        # Shared test fixtures
+│   ├── test_models.py
+│   ├── test_invoice_manager.py
+│   ├── test_pdf_generator.py
+│   └── test_cli.py
 ├── config/
 │   └── business_details.json  # Business information
 ├── data/
@@ -51,3 +68,7 @@ invoice-generator/
 ## Configuration
 
 Edit `config/business_details.json` to update business details.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
