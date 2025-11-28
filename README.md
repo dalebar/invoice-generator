@@ -5,8 +5,10 @@ CLI tool for generating professional PDF invoices for a man-and-van waste remova
 ## Features
 
 - Auto-incrementing invoice numbers (INV1001, INV1002, etc.)
-- Persistent invoice tracking
-- Professional PDF output
+- Multiple line items per invoice with optional quantities
+- Support for business-only invoices (no individual client name required)
+- Persistent invoice tracking with JSON storage
+- Professional PDF output with detailed line item breakdown
 - Interactive CLI for easy invoice creation
 
 ## Installation
@@ -24,13 +26,26 @@ python main.py
 ```
 
 Follow the interactive prompts to enter:
-- Client name
-- Company name (optional)
-- Address details
-- Job description
-- Amount
+- Client name (optional if company provided)
+- Company name (optional if client name provided)
+- Address details (line 1, city, postcode)
+- Multiple line items:
+  - Description
+  - Unit price (£)
+  - Quantity (optional, defaults to 1)
+  - Press Enter on description to finish adding items
+- Payment terms (due on receipt or specify due date)
 
-The PDF will be saved to the `invoices/` directory.
+The PDF will be saved to the `invoices/` directory with automatic filename generation.
+
+### Example Line Items
+
+```
+Day Rate: 5 × £100.00 = £500.00
+Transport Fee: 2 × £25.00 = £50.00
+Fixed Disposal: 1 × £75.00 = £75.00
+Total: £625.00
+```
 
 ## Testing
 
