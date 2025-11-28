@@ -8,21 +8,24 @@ from typing import Callable, Optional
 from .models import ClientDetails, Invoice, LineItem
 from .invoice_manager import InvoiceManager
 from .pdf_generator import InvoicePDFGenerator
+from .contact_manager import ContactManager
 
 
 class InvoiceCLI:
     """Interactive command-line interface."""
 
-    def __init__(self, manager: InvoiceManager, generator: InvoicePDFGenerator):
+    def __init__(self, manager: InvoiceManager, generator: InvoicePDFGenerator, contact_manager: Optional[ContactManager] = None):
         """
         Initialize with manager and generator.
 
         Args:
             manager: Invoice manager for numbering and tracking.
             generator: PDF generator for creating invoices.
+            contact_manager: Optional contact manager for storing/retrieving clients.
         """
         self.manager = manager
         self.generator = generator
+        self.contact_manager = contact_manager or ContactManager()
 
     def run_interactive(self) -> None:
         """
@@ -39,39 +42,14 @@ class InvoiceCLI:
         """
         print("\n=== Invoice Generator ===\n")
 
-        # Get client details
-        print("Client Details")
-        print("-" * 40)
+        # Check for saved contacts
+        client = self._select_or_create_contact()
 
-        client_name = input("Client name (optional, press Enter to skip): ").strip()
-        company = input("Company name (optional, press Enter to skip): ").strip()
-
-        # At least one of name or company must be provided
-        if not client_name and not company:
-            print("  Error: Either client name or company name is required.")
-            client_name = self.prompt_with_validation(
-                "Client name: ",
-                validator=self._validate_not_empty,
-                error_msg="Client name cannot be empty.",
-            )
-
-        address_line1 = self.prompt_with_validation(
-            "Address line 1: ",
-            validator=self._validate_not_empty,
-            error_msg="Address cannot be empty.",
-        )
-
-        city = self.prompt_with_validation(
-            "City: ",
-            validator=self._validate_not_empty,
-            error_msg="City cannot be empty.",
-        )
-
-        postcode = self.prompt_with_validation(
-            "Postcode: ",
-            validator=self._validate_postcode,
-            error_msg="Please enter a valid UK postcode.",
-        )
+        client_name = client.name
+        company = client.company
+        address_line1 = client.address_line1
+        city = client.city
+        postcode = client.postcode
 
         # Get line items
         print("\nLine Items")
@@ -154,6 +132,9 @@ class InvoiceCLI:
         print(f"  File: {output_path}")
         print(f"  Invoice Number: {invoice_number}")
         print(f"  Total: \u00a3{invoice.total:.2f}")
+
+        # Offer to save contact
+        self._offer_save_contact(client)
 
     def prompt_with_validation(
         self,
@@ -241,3 +222,114 @@ class InvoiceCLI:
         safe = re.sub(r"[^\w\s-]", "", name)
         safe = re.sub(r"\s+", "_", safe)
         return safe
+
+    def _select_or_create_contact(self) -> ClientDetails:
+        """
+        Show saved contacts and allow user to select or create new.
+
+        Returns:
+            ClientDetails from saved contact or manual entry.
+        """
+        contacts = self.contact_manager.get_all_contacts()
+
+        if not contacts:
+            print("No saved contacts found.\n")
+            return self._create_new_contact()
+
+        print("\nSaved Contacts:")
+        print("-" * 40)
+        for idx, contact in enumerate(contacts, 1):
+            display_name = contact.get("contact_name", "Unknown")
+            company = contact.get("company", "")
+            if company:
+                print(f"{idx}. {display_name} ({company})")
+            else:
+                print(f"{idx}. {display_name}")
+
+        print(f"{len(contacts) + 1}. Enter new contact manually")
+        print()
+
+        choice = self.prompt_with_validation(
+            f"Select contact (1-{len(contacts) + 1}): ",
+            validator=lambda x: x.isdigit() and 1 <= int(x) <= len(contacts) + 1,
+            error_msg=f"Please enter a number between 1 and {len(contacts) + 1}.",
+        )
+
+        choice_num = int(choice)
+        if choice_num == len(contacts) + 1:
+            return self._create_new_contact()
+
+        selected = contacts[choice_num - 1]
+        return self.contact_manager.get_contact(selected["contact_name"])
+
+    def _create_new_contact(self) -> ClientDetails:
+        """
+        Prompt user to enter new contact details manually.
+
+        Returns:
+            ClientDetails from user input.
+        """
+        print("\nClient Details")
+        print("-" * 40)
+
+        client_name = input("Client name (optional if company provided): ").strip()
+        company = input("Company name (optional if client name provided): ").strip()
+
+        if not client_name and not company:
+            print("  Error: Either client name or company name is required.")
+            return self._create_new_contact()
+
+        address_line1 = self.prompt_with_validation(
+            "Address line 1: ",
+            validator=self._validate_not_empty,
+            error_msg="Address cannot be empty.",
+        )
+
+        city = self.prompt_with_validation(
+            "City: ",
+            validator=self._validate_not_empty,
+            error_msg="City cannot be empty.",
+        )
+
+        postcode = self.prompt_with_validation(
+            "Postcode: ",
+            validator=self._validate_postcode,
+            error_msg="Invalid postcode format (e.g., M1 1AA or M11AA).",
+        )
+
+        return ClientDetails(
+            name=client_name,
+            company=company,
+            address_line1=address_line1,
+            city=city,
+            postcode=postcode.upper(),
+        )
+
+    def _offer_save_contact(self, client: ClientDetails) -> None:
+        """
+        Offer to save the contact after invoice creation.
+
+        Args:
+            client: ClientDetails to potentially save.
+        """
+        # Check if contact already exists
+        contacts = self.contact_manager.get_all_contacts()
+        default_name = client.company or client.name
+
+        for contact in contacts:
+            if contact.get("contact_name") == default_name:
+                # Contact already exists, no need to offer save
+                return
+
+        save = self.prompt_yes_no("\nSave this contact for future use? (Y/n): ", default=True)
+        if not save:
+            return
+
+        suggested_name = client.company or client.name
+        contact_name = input(f"Contact name (default: {suggested_name}): ").strip()
+
+        if not contact_name:
+            contact_name = suggested_name
+
+        self.contact_manager.save_contact(client, contact_name)
+        print(f"✓ Contact '{contact_name}' saved successfully.")

@@ -4,6 +4,7 @@ from .models import BusinessDetails, ClientDetails, Invoice, LineItem
 from .invoice_manager import InvoiceManager
 from .pdf_generator import InvoicePDFGenerator
 from .cli import InvoiceCLI
+from .contact_manager import ContactManager
 
 __all__ = [
     "BusinessDetails",
@@ -13,4 +14,5 @@ __all__ = [
     "InvoiceManager",
     "InvoicePDFGenerator",
     "InvoiceCLI",
+    "ContactManager",
 ]

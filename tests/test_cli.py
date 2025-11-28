@@ -210,16 +210,20 @@ class TestInteractiveMode:
         cli = InvoiceCLI(invoice_manager, pdf_generator)
 
         inputs = [
+            # Contact creation (no saved contacts)
             "John Smith",        # Client name
             "Smith Ltd",         # Company
             "123 Test Street",   # Address
             "Manchester",        # City
             "M1 1AA",           # Postcode
+            # Line items
             "Waste removal",     # Item 1 description
             "150.00",           # Item 1 amount
             "",                 # Item 1 quantity (default 1)
             "",                 # Finish adding items
             "y",                # Due on receipt
+            # Save contact
+            "n",                # Don't save contact
         ]
 
         # Change to temp directory for output
@@ -250,16 +254,20 @@ class TestInteractiveMode:
         cli = InvoiceCLI(invoice_manager, pdf_generator)
 
         inputs = [
+            # Contact creation (no saved contacts)
             "Jane Doe",          # Client name
             "",                  # No company
             "456 Home Lane",     # Address
             "London",            # City
             "SW1A 1AA",         # Postcode
+            # Line items
             "Garden clearance",  # Item 1 description
             "200.00",           # Item 1 amount
             "",                 # Item 1 quantity (default 1)
             "",                 # Finish adding items
             "y",                # Due on receipt
+            # Save contact
+            "n",                # Don't save contact
         ]
 
         original_cwd = os.getcwd()
@@ -287,16 +295,19 @@ class TestInteractiveMode:
         cli = InvoiceCLI(invoice_manager, pdf_generator)
 
         inputs_template = [
+            # Contact creation
             "Client {}",
             "Company {}",
             "Address {}",
             "City",
             "M1 1AA",
+            # Line items
             "Job {}",
             "100.00",
             "",  # Quantity (default 1)
             "",  # Finish items
-            "y",
+            "y",  # Due on receipt
+            "n",  # Don't save contact
         ]
 
         original_cwd = os.getcwd()
@@ -328,15 +339,18 @@ class TestInteractiveMode:
         cli = InvoiceCLI(invoice_manager, pdf_generator)
 
         inputs = [
+            # Contact creation with validation errors
             "",                  # Empty client name (valid if company provided)
             "",                  # Empty company - both empty triggers error
             "John Smith",        # Valid client name after error
+            "",                  # No company (ok since name provided)
             "",                  # Invalid - empty address
             "123 Test St",       # Valid address
             "",                  # Invalid - empty city
             "London",            # Valid city
             "invalid",           # Invalid postcode
             "SW1A 1AA",         # Valid postcode
+            # Line items with validation errors
             "",                  # Invalid - empty description
             "Test job",          # Valid description
             "abc",               # Invalid amount
@@ -344,7 +358,8 @@ class TestInteractiveMode:
             "100.00",           # Valid amount
             "",                 # Quantity (default 1)
             "",                 # Finish adding items
-            "y",
+            "y",                # Due on receipt
+            "n",                # Don't save contact
         ]
 
         original_cwd = os.getcwd()
@@ -360,3 +375,322 @@ class TestInteractiveMode:
             assert len(pdf_files) == 1
         finally:
             os.chdir(original_cwd)
+
+
+class TestContactManagement:
+    """Tests for contact management features."""
+
+    def test_select_or_create_with_no_saved_contacts(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test contact selection when no contacts are saved."""
+        from src.contact_manager import ContactManager
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        inputs = [
+            "John Smith",        # Client name
+            "Smith Ltd",         # Company
+            "123 Test St",       # Address
+            "London",            # City
+            "SW1A 1AA",         # Postcode
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                result = cli._select_or_create_contact()
+
+        assert result.name == "John Smith"
+        assert result.company == "Smith Ltd"
+        assert result.postcode == "SW1A 1AA"
+
+    def test_select_or_create_with_saved_contacts_choose_new(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test choosing to create new contact when saved contacts exist."""
+        from src.contact_manager import ContactManager
+        from src.models import ClientDetails
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+
+        # Save a contact
+        existing = ClientDetails(
+            name="Existing Client",
+            company="Existing Corp",
+            address_line1="Old Address",
+            city="Old City",
+            postcode="OL1 1DC",
+        )
+        contact_manager.save_contact(existing)
+
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        inputs = [
+            "2",                 # Choose "Enter new contact manually"
+            "New Client",        # Client name
+            "New Corp",          # Company
+            "New Address",       # Address
+            "New City",          # City
+            "NE1 1WC",          # Postcode
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                result = cli._select_or_create_contact()
+
+        assert result.name == "New Client"
+        assert result.company == "New Corp"
+
+    def test_select_or_create_with_saved_contacts_choose_existing(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test selecting an existing saved contact."""
+        from src.contact_manager import ContactManager
+        from src.models import ClientDetails
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+
+        # Save a contact
+        existing = ClientDetails(
+            name="Saved Client",
+            company="Saved Corp",
+            address_line1="Saved Address",
+            city="Saved City",
+            postcode="SA1 1VE",
+        )
+        contact_manager.save_contact(existing, "Saved Contact")
+
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        inputs = ["1"]  # Select first contact
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                result = cli._select_or_create_contact()
+
+        assert result.name == "Saved Client"
+        assert result.company == "Saved Corp"
+        assert result.postcode == "SA1 1VE"
+
+    def test_create_new_contact_with_both_name_and_company(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+    ):
+        """Test creating a new contact with both name and company."""
+        cli = InvoiceCLI(invoice_manager, pdf_generator)
+
+        inputs = [
+            "Alice Jones",       # Client name
+            "Jones & Co",        # Company
+            "100 Business Rd",   # Address
+            "Manchester",        # City
+            "M1 1AA",           # Postcode
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                result = cli._create_new_contact()
+
+        assert result.name == "Alice Jones"
+        assert result.company == "Jones & Co"
+        assert result.city == "Manchester"
+
+    def test_create_new_contact_company_only(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+    ):
+        """Test creating a business-only contact (no individual name)."""
+        cli = InvoiceCLI(invoice_manager, pdf_generator)
+
+        inputs = [
+            "",                  # No client name
+            "Business Corp",     # Company
+            "200 Corp Ave",      # Address
+            "Birmingham",        # City
+            "B33 8TH",          # Postcode
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                result = cli._create_new_contact()
+
+        assert result.name == ""
+        assert result.company == "Business Corp"
+
+    def test_create_new_contact_retries_on_empty_both(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+    ):
+        """Test that creating contact retries when both name and company are empty."""
+        cli = InvoiceCLI(invoice_manager, pdf_generator)
+
+        inputs = [
+            "",                  # Empty client name
+            "",                  # Empty company (triggers retry)
+            "Retry Client",      # Valid client name
+            "",                  # No company (ok since name provided)
+            "123 Retry St",      # Address
+            "London",            # City
+            "SW1A 1AA",         # Postcode
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                result = cli._create_new_contact()
+
+        assert result.name == "Retry Client"
+
+    def test_offer_save_contact_accepts_save(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test offering to save contact when user accepts."""
+        from src.contact_manager import ContactManager
+        from src.models import ClientDetails
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        client = ClientDetails(
+            name="New Client",
+            company="New Corp",
+            address_line1="123 New St",
+            city="Newtown",
+            postcode="NE1 1WN",
+        )
+
+        inputs = [
+            "y",                 # Yes, save contact
+            "",                  # Use default name (New Corp)
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                cli._offer_save_contact(client)
+
+        # Verify contact was saved
+        contacts = contact_manager.get_all_contacts()
+        assert len(contacts) == 1
+        assert contacts[0]["contact_name"] == "New Corp"
+
+    def test_offer_save_contact_with_custom_name(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test offering to save contact with custom name."""
+        from src.contact_manager import ContactManager
+        from src.models import ClientDetails
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        client = ClientDetails(
+            name="Bob Smith",
+            company="",
+            address_line1="456 Custom Ave",
+            city="Customville",
+            postcode="CU1 1ST",
+        )
+
+        inputs = [
+            "y",                 # Yes, save contact
+            "Bob's Account",     # Custom contact name
+        ]
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                cli._offer_save_contact(client)
+
+        contacts = contact_manager.get_all_contacts()
+        assert len(contacts) == 1
+        assert contacts[0]["contact_name"] == "Bob's Account"
+
+    def test_offer_save_contact_declines_save(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test offering to save contact when user declines."""
+        from src.contact_manager import ContactManager
+        from src.models import ClientDetails
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        client = ClientDetails(
+            name="Decline Client",
+            company="",
+            address_line1="789 Decline Rd",
+            city="Declineton",
+            postcode="DE1 1CL",
+        )
+
+        inputs = ["n"]  # No, don't save
+
+        with patch("builtins.input", side_effect=inputs):
+            with patch("builtins.print"):
+                cli._offer_save_contact(client)
+
+        # Verify no contact was saved
+        contacts = contact_manager.get_all_contacts()
+        assert len(contacts) == 0
+
+    def test_offer_save_contact_skips_if_already_exists(
+        self,
+        invoice_manager: InvoiceManager,
+        pdf_generator: InvoicePDFGenerator,
+        tmp_path: Path,
+    ):
+        """Test that offer to save is skipped if contact already exists."""
+        from src.contact_manager import ContactManager
+        from src.models import ClientDetails
+
+        contact_file = tmp_path / "contacts.json"
+        contact_manager = ContactManager(str(contact_file))
+        cli = InvoiceCLI(invoice_manager, pdf_generator, contact_manager)
+
+        # Save a contact
+        client = ClientDetails(
+            name="Existing Client",
+            company="Existing Corp",
+            address_line1="Existing Address",
+            city="Existing City",
+            postcode="EX1 1ST",
+        )
+        contact_manager.save_contact(client)
+
+        # Try to offer save for same contact (should skip without prompting)
+        with patch("builtins.input") as mock_input:
+            with patch("builtins.print"):
+                cli._offer_save_contact(client)
+
+        # Verify no input was requested (function returned early)
+        mock_input.assert_not_called()
+
+        # Verify still only one contact
+        contacts = contact_manager.get_all_contacts()
+        assert len(contacts) == 1

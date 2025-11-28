@@ -36,7 +36,11 @@ env/
 # Project specific
 invoices/*.pdf
 data/invoice_tracker.json
+data/business_contacts.json
 
 # OS
 .DS_Store
 Thumbs.db
+
+#CC
+CLAUDE.md
