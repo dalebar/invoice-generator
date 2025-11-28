@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from src.models import BusinessDetails, ClientDetails, Invoice
+from src.models import BusinessDetails, ClientDetails, Invoice, LineItem
 
 
 class TestBusinessDetails:
@@ -75,6 +75,23 @@ class TestClientDetails:
         assert len(data) == 5
 
 
+class TestLineItem:
+    """Tests for the LineItem dataclass."""
+
+    def test_create_line_item(self):
+        """Test that LineItem can be created."""
+        item = LineItem("Test description", Decimal("100.00"))
+        assert item.description == "Test description"
+        assert item.amount == Decimal("100.00")
+
+    def test_line_item_is_dataclass(self):
+        """Test that LineItem is a proper dataclass."""
+        item = LineItem("Test", Decimal("50.00"))
+        data = asdict(item)
+        assert isinstance(data, dict)
+        assert len(data) == 2
+
+
 class TestInvoice:
     """Tests for the Invoice dataclass."""
 
@@ -83,38 +100,39 @@ class TestInvoice:
         assert sample_invoice.invoice_number == "INV1001"
         assert sample_invoice.issue_date == date(2025, 11, 24)
         assert sample_invoice.due_date == date(2025, 11, 24)
-        assert sample_invoice.description == "Waste removal and disposal services"
-        assert sample_invoice.amount == Decimal("150.00")
+        assert len(sample_invoice.line_items) == 1
+        assert sample_invoice.line_items[0].description == "Waste removal and disposal services"
+        assert sample_invoice.line_items[0].amount == Decimal("150.00")
         assert sample_invoice.vat_status == "No VAT"
 
     def test_invoice_total_property(self, sample_invoice: Invoice):
         """Test that total property returns the correct amount."""
         assert sample_invoice.total == Decimal("150.00")
-        assert sample_invoice.total == sample_invoice.amount
+        assert sample_invoice.total == sample_invoice.subtotal
 
     def test_invoice_default_vat_status(self, business_details, client_details):
         """Test that VAT status defaults to 'No VAT'."""
+        line_items = [LineItem("Test", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1002",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client_details,
-            description="Test",
-            amount=Decimal("100.00"),
+            line_items=line_items,
         )
         assert invoice.vat_status == "No VAT"
 
     def test_invoice_custom_vat_status(self, business_details, client_details):
         """Test that custom VAT status can be set."""
+        line_items = [LineItem("Test", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1003",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client_details,
-            description="Test",
-            amount=Decimal("100.00"),
+            line_items=line_items,
             vat_status="20% VAT",
         )
         assert invoice.vat_status == "20% VAT"
@@ -139,14 +157,32 @@ class TestInvoice:
         ]
 
         for amount in test_amounts:
+            line_items = [LineItem("Test", amount)]
             invoice = Invoice(
                 invoice_number="INV0001",
                 issue_date=date.today(),
                 due_date=date.today(),
                 business=business_details,
                 client=client_details,
-                description="Test",
-                amount=amount,
+                line_items=line_items,
             )
-            assert invoice.amount == amount
+            assert invoice.subtotal == amount
             assert invoice.total == amount
+
+    def test_invoice_with_multiple_line_items(self, business_details, client_details):
+        """Test invoice with multiple line items calculates subtotal correctly."""
+        line_items = [
+            LineItem("Item 1", Decimal("50.00")),
+            LineItem("Item 2", Decimal("30.00")),
+            LineItem("Item 3", Decimal("20.00")),
+        ]
+        invoice = Invoice(
+            invoice_number="INV0002",
+            issue_date=date.today(),
+            due_date=date.today(),
+            business=business_details,
+            client=client_details,
+            line_items=line_items,
+        )
+        assert invoice.subtotal == Decimal("100.00")
+        assert invoice.total == Decimal("100.00")

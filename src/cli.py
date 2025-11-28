@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Callable, Optional
 
-from .models import ClientDetails, Invoice
+from .models import ClientDetails, Invoice, LineItem
 from .invoice_manager import InvoiceManager
 from .pdf_generator import InvoicePDFGenerator
 
@@ -29,25 +29,31 @@ class InvoiceCLI:
         Interactive mode - prompt user for invoice details and generate PDF.
 
         Prompts for:
-        - Client name
+        - Client name (optional for business-only)
         - Company name (optional)
         - Address line 1
         - City
         - Postcode
-        - Job description
-        - Amount
+        - Multiple line items (description + amount)
         - Due on receipt (Y/n)
         """
         print("\n=== Invoice Generator ===\n")
 
         # Get client details
-        client_name = self.prompt_with_validation(
-            "Client name: ",
-            validator=self._validate_not_empty,
-            error_msg="Client name cannot be empty.",
-        )
+        print("Client Details")
+        print("-" * 40)
 
+        client_name = input("Client name (optional, press Enter to skip): ").strip()
         company = input("Company name (optional, press Enter to skip): ").strip()
+
+        # At least one of name or company must be provided
+        if not client_name and not company:
+            print("  Error: Either client name or company name is required.")
+            client_name = self.prompt_with_validation(
+                "Client name: ",
+                validator=self._validate_not_empty,
+                error_msg="Client name cannot be empty.",
+            )
 
         address_line1 = self.prompt_with_validation(
             "Address line 1: ",
@@ -67,18 +73,35 @@ class InvoiceCLI:
             error_msg="Please enter a valid UK postcode.",
         )
 
-        description = self.prompt_with_validation(
-            "Job description: ",
-            validator=self._validate_not_empty,
-            error_msg="Description cannot be empty.",
-        )
+        # Get line items
+        print("\nLine Items")
+        print("-" * 40)
+        print("Enter line items (description and amount). Press Enter on description to finish.\n")
 
-        amount = self.prompt_with_validation(
-            "Amount (\u00a3): ",
-            validator=self._validate_decimal,
-            error_msg="Please enter a valid amount (e.g., 120.00).",
-        )
+        line_items = []
+        item_num = 1
 
+        while True:
+            description = input(f"Item {item_num} description (or Enter to finish): ").strip()
+            if not description:
+                if len(line_items) == 0:
+                    print("  Error: At least one line item is required.")
+                    continue
+                break
+
+            amount = self.prompt_with_validation(
+                f"Item {item_num} amount (\u00a3): ",
+                validator=self._validate_decimal,
+                error_msg="Please enter a valid amount (e.g., 120.00).",
+            )
+
+            line_items.append(LineItem(
+                description=description,
+                amount=Decimal(amount)
+            ))
+            item_num += 1
+
+        print()
         due_on_receipt = self.prompt_yes_no("Due on receipt? (Y/n): ", default=True)
 
         # Create client details
@@ -102,8 +125,7 @@ class InvoiceCLI:
             due_date=due_date,
             business=self.generator.business,
             client=client,
-            description=description,
-            amount=Decimal(amount),
+            line_items=line_items,
         )
 
         # Generate filename
@@ -121,7 +143,7 @@ class InvoiceCLI:
         print(f"\n✓ Invoice generated successfully!")
         print(f"  File: {output_path}")
         print(f"  Invoice Number: {invoice_number}")
-        print(f"  Amount: \u00a3{invoice.amount:.2f}")
+        print(f"  Total: \u00a3{invoice.total:.2f}")
 
     def prompt_with_validation(
         self,

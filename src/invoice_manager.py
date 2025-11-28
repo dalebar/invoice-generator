@@ -81,10 +81,13 @@ class InvoiceManager:
         """
         tracker = self.load_tracker()
 
+        # Determine client identifier
+        client_identifier = invoice.client.company or invoice.client.name
+
         record = {
             "invoice_number": invoice.invoice_number,
-            "client": invoice.client.company if invoice.client.company else invoice.client.name,
-            "amount": str(invoice.amount),
+            "client": client_identifier,
+            "amount": str(invoice.total),
             "date": invoice.issue_date.isoformat(),
             "file_path": file_path,
         }

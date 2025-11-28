@@ -22,11 +22,19 @@ class BusinessDetails:
 class ClientDetails:
     """Client information for invoice recipient."""
 
-    name: str
+    name: str  # Can be empty string for business-only invoices
     company: str  # Can be empty string
     address_line1: str
     city: str
     postcode: str
+
+
+@dataclass
+class LineItem:
+    """Individual line item on an invoice."""
+
+    description: str
+    amount: Decimal
 
 
 @dataclass
@@ -38,11 +46,15 @@ class Invoice:
     due_date: date
     business: BusinessDetails
     client: ClientDetails
-    description: str
-    amount: Decimal
+    line_items: list[LineItem]
     vat_status: str = "No VAT"
 
     @property
+    def subtotal(self) -> Decimal:
+        """Calculate subtotal from all line items."""
+        return sum(item.amount for item in self.line_items)
+
+    @property
     def total(self) -> Decimal:
-        """Calculate total amount (currently same as amount since no VAT)."""
-        return self.amount
+        """Calculate total amount (currently same as subtotal since no VAT)."""
+        return self.subtotal

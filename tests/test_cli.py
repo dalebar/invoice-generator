@@ -215,8 +215,9 @@ class TestInteractiveMode:
             "123 Test Street",   # Address
             "Manchester",        # City
             "M1 1AA",           # Postcode
-            "Waste removal",     # Description
-            "150.00",           # Amount
+            "Waste removal",     # Item 1 description
+            "150.00",           # Item 1 amount
+            "",                 # Finish adding items
             "y",                # Due on receipt
         ]
 
@@ -253,8 +254,9 @@ class TestInteractiveMode:
             "456 Home Lane",     # Address
             "London",            # City
             "SW1A 1AA",         # Postcode
-            "Garden clearance",  # Description
-            "200.00",           # Amount
+            "Garden clearance",  # Item 1 description
+            "200.00",           # Item 1 amount
+            "",                 # Finish adding items
             "y",                # Due on receipt
         ]
 
@@ -290,6 +292,7 @@ class TestInteractiveMode:
             "M1 1AA",
             "Job {}",
             "100.00",
+            "",  # Finish items
             "y",
         ]
 
@@ -322,9 +325,9 @@ class TestInteractiveMode:
         cli = InvoiceCLI(invoice_manager, pdf_generator)
 
         inputs = [
-            "",                  # Invalid - empty client name
-            "John Smith",        # Valid client name
-            "",                  # Empty company (valid)
+            "",                  # Empty client name (valid if company provided)
+            "",                  # Empty company - both empty triggers error
+            "John Smith",        # Valid client name after error
             "",                  # Invalid - empty address
             "123 Test St",       # Valid address
             "",                  # Invalid - empty city
@@ -336,6 +339,7 @@ class TestInteractiveMode:
             "abc",               # Invalid amount
             "-50",               # Invalid amount (negative)
             "100.00",           # Valid amount
+            "",                 # Finish adding items
             "y",
         ]
 

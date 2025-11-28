@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from src.models import BusinessDetails, ClientDetails, Invoice
+from src.models import BusinessDetails, ClientDetails, Invoice, LineItem
 from src.pdf_generator import InvoicePDFGenerator
 
 
@@ -179,14 +179,14 @@ class TestPDFWithDifferentDates:
         temp_invoice_dir: Path,
     ):
         """Test PDF generation when due date equals issue date."""
+        line_items = [LineItem("Test job", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1001",
             issue_date=date(2025, 11, 24),
             due_date=date(2025, 11, 24),
             business=business_details,
             client=client_details,
-            description="Test job",
-            amount=Decimal("100.00"),
+            line_items=line_items,
         )
         output_path = str(temp_invoice_dir / "due_on_receipt.pdf")
 
@@ -202,14 +202,14 @@ class TestPDFWithDifferentDates:
         temp_invoice_dir: Path,
     ):
         """Test PDF generation with future due date."""
+        line_items = [LineItem("Test job", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1002",
             issue_date=date(2025, 11, 24),
             due_date=date(2025, 12, 24),
             business=business_details,
             client=client_details,
-            description="Test job",
-            amount=Decimal("100.00"),
+            line_items=line_items,
         )
         output_path = str(temp_invoice_dir / "future_due.pdf")
 
@@ -242,14 +242,14 @@ class TestPDFWithDifferentClients:
         temp_invoice_dir: Path,
     ):
         """Test PDF generation for client without company name."""
+        line_items = [LineItem("Test job", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1001",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client_details_no_company,
-            description="Test job",
-            amount=Decimal("100.00"),
+            line_items=line_items,
         )
         output_path = str(temp_invoice_dir / "without_company.pdf")
 
@@ -282,14 +282,14 @@ class TestPDFWithDifferentAmounts:
         amount: Decimal,
     ):
         """Test PDF generation with various amounts."""
+        line_items = [LineItem("Test job", amount)]
         invoice = Invoice(
             invoice_number="INV1001",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client_details,
-            description="Test job",
-            amount=amount,
+            line_items=line_items,
         )
         output_path = str(temp_invoice_dir / f"amount_{amount}.pdf")
 
@@ -309,14 +309,14 @@ class TestPDFWithSpecialCharacters:
         temp_invoice_dir: Path,
     ):
         """Test PDF generation with special characters in description."""
+        line_items = [LineItem("Waste removal - including: sofas, chairs & tables (x3)", Decimal("200.00"))]
         invoice = Invoice(
             invoice_number="INV1001",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client_details,
-            description="Waste removal - including: sofas, chairs & tables (x3)",
-            amount=Decimal("200.00"),
+            line_items=line_items,
         )
         output_path = str(temp_invoice_dir / "special_chars.pdf")
 
@@ -338,14 +338,14 @@ class TestPDFWithSpecialCharacters:
             city="Dublin",
             postcode="D01 ABC",
         )
+        line_items = [LineItem("Test job", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1001",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client,
-            description="Test job",
-            amount=Decimal("100.00"),
+            line_items=line_items,
         )
         output_path = str(temp_invoice_dir / "apostrophe.pdf")
 

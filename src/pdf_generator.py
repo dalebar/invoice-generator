@@ -144,14 +144,14 @@ class InvoicePDFGenerator:
         ]
 
         # Build To address
-        to_lines = [
-            Paragraph("<b>To:</b>", self.styles["SectionHeader"]),
-            Paragraph(invoice.client.name, self.styles["AddressText"]),
-        ]
+        to_lines = [Paragraph("<b>To:</b>", self.styles["SectionHeader"])]
+
+        # Add name and/or company (at least one must exist)
+        if invoice.client.name:
+            to_lines.append(Paragraph(invoice.client.name, self.styles["AddressText"]))
         if invoice.client.company:
-            to_lines.append(
-                Paragraph(invoice.client.company, self.styles["AddressText"])
-            )
+            to_lines.append(Paragraph(invoice.client.company, self.styles["AddressText"]))
+
         to_lines.extend(
             [
                 Paragraph(invoice.client.address_line1, self.styles["AddressText"]),
@@ -217,11 +217,13 @@ class InvoicePDFGenerator:
         return table
 
     def _create_description_table(self, invoice: Invoice) -> Table:
-        """Create the description and amount table."""
-        data = [
-            ["Description", "Amount (GBP)"],
-            [invoice.description, f"\u00a3{invoice.amount:.2f}"],
-        ]
+        """Create the description and amount table with line items."""
+        # Header row
+        data = [["Description", "Amount (GBP)"]]
+
+        # Add each line item
+        for item in invoice.line_items:
+            data.append([item.description, f"\u00a3{item.amount:.2f}"])
 
         table = Table(data, colWidths=[130 * mm, 40 * mm])
         table.setStyle(
@@ -250,7 +252,7 @@ class InvoicePDFGenerator:
     def _create_totals_section(self, invoice: Invoice) -> Table:
         """Create the subtotal, VAT, and total section."""
         data = [
-            ["Subtotal:", f"\u00a3{invoice.amount:.2f}"],
+            ["Subtotal:", f"\u00a3{invoice.subtotal:.2f}"],
             ["VAT:", invoice.vat_status],
             ["Total:", f"\u00a3{invoice.total:.2f}"],
         ]

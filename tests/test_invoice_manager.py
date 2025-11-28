@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from src.invoice_manager import InvoiceManager
-from src.models import Invoice
+from src.models import Invoice, LineItem
 
 
 class TestInvoiceManagerInitialisation:
@@ -143,14 +143,14 @@ class TestInvoiceRecordSaving:
 
         invoice_manager.save_invoice_record(sample_invoice, "invoices/INV1001.pdf")
 
+        line_items2 = [LineItem("Another job", Decimal("200.00"))]
         invoice2 = Invoice(
             invoice_number="INV1002",
             issue_date=date(2025, 11, 25),
             due_date=date(2025, 11, 25),
             business=business_details,
             client=client_details_no_company,
-            description="Another job",
-            amount=Decimal("200.00"),
+            line_items=line_items2,
         )
         invoice_manager.save_invoice_record(invoice2, "invoices/INV1002.pdf")
 
@@ -170,14 +170,14 @@ class TestInvoiceRecordSaving:
         from datetime import date
         from decimal import Decimal
 
+        line_items = [LineItem("Test", Decimal("100.00"))]
         invoice = Invoice(
             invoice_number="INV1001",
             issue_date=date.today(),
             due_date=date.today(),
             business=business_details,
             client=client_details_no_company,
-            description="Test",
-            amount=Decimal("100.00"),
+            line_items=line_items,
         )
 
         invoice_manager.save_invoice_record(invoice, "invoices/INV1001.pdf")

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from src.models import BusinessDetails, ClientDetails, Invoice
+from src.models import BusinessDetails, ClientDetails, Invoice, LineItem
 from src.invoice_manager import InvoiceManager
 from src.pdf_generator import InvoicePDFGenerator
 
@@ -54,14 +54,16 @@ def client_details_no_company() -> ClientDetails:
 @pytest.fixture
 def sample_invoice(business_details: BusinessDetails, client_details: ClientDetails) -> Invoice:
     """Fixture providing a complete sample invoice."""
+    line_items = [
+        LineItem("Waste removal and disposal services", Decimal("150.00"))
+    ]
     return Invoice(
         invoice_number="INV1001",
         issue_date=date(2025, 11, 24),
         due_date=date(2025, 11, 24),
         business=business_details,
         client=client_details,
-        description="Waste removal and disposal services",
-        amount=Decimal("150.00"),
+        line_items=line_items,
     )
 
 
