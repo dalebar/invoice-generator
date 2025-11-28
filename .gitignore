@@ -38,6 +38,11 @@ invoices/*.pdf
 data/invoice_tracker.json
 data/business_contacts.json
 
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
 # OS
 .DS_Store
 Thumbs.db
