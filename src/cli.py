@@ -95,9 +95,19 @@ class InvoiceCLI:
                 error_msg="Please enter a valid amount (e.g., 120.00).",
             )
 
+            quantity_input = input(f"Item {item_num} quantity (default 1): ").strip()
+            quantity = 1
+            if quantity_input:
+                quantity = int(self.prompt_with_validation(
+                    f"Item {item_num} quantity: ",
+                    validator=self._validate_positive_integer,
+                    error_msg="Please enter a valid quantity (positive integer).",
+                ) if not self._validate_positive_integer(quantity_input) else quantity_input)
+
             line_items.append(LineItem(
                 description=description,
-                amount=Decimal(amount)
+                amount=Decimal(amount),
+                quantity=quantity
             ))
             item_num += 1
 
@@ -206,6 +216,15 @@ class InvoiceCLI:
         # Basic UK postcode pattern
         pattern = r"^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$"
         return bool(re.match(pattern, value.strip()))
+
+    @staticmethod
+    def _validate_positive_integer(value: str) -> bool:
+        """Validate that value is a positive integer."""
+        try:
+            qty = int(value)
+            return qty > 0
+        except ValueError:
+            return False
 
     @staticmethod
     def _sanitize_filename(name: str) -> str:

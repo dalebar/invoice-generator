@@ -35,6 +35,12 @@ class LineItem:
 
     description: str
     amount: Decimal
+    quantity: int = 1
+
+    @property
+    def line_total(self) -> Decimal:
+        """Calculate line total (amount * quantity)."""
+        return self.amount * self.quantity
 
 
 @dataclass
@@ -52,7 +58,7 @@ class Invoice:
     @property
     def subtotal(self) -> Decimal:
         """Calculate subtotal from all line items."""
-        return sum(item.amount for item in self.line_items)
+        return sum(item.line_total for item in self.line_items)
 
     @property
     def total(self) -> Decimal:

@@ -219,13 +219,18 @@ class InvoicePDFGenerator:
     def _create_description_table(self, invoice: Invoice) -> Table:
         """Create the description and amount table with line items."""
         # Header row
-        data = [["Description", "Amount (GBP)"]]
+        data = [["Description", "Qty", "Unit Price (GBP)", "Total (GBP)"]]
 
         # Add each line item
         for item in invoice.line_items:
-            data.append([item.description, f"\u00a3{item.amount:.2f}"])
+            data.append([
+                item.description,
+                str(item.quantity),
+                f"\u00a3{item.amount:.2f}",
+                f"\u00a3{item.line_total:.2f}"
+            ])
 
-        table = Table(data, colWidths=[130 * mm, 40 * mm])
+        table = Table(data, colWidths=[95 * mm, 15 * mm, 30 * mm, 30 * mm])
         table.setStyle(
             TableStyle(
                 [
@@ -234,7 +239,9 @@ class InvoicePDFGenerator:
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 10),
                     # Alignment
-                    ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                    ("ALIGN", (1, 0), (1, -1), "CENTER"),  # Qty column centered
+                    ("ALIGN", (2, 0), (2, -1), "RIGHT"),   # Unit Price right
+                    ("ALIGN", (3, 0), (3, -1), "RIGHT"),   # Total right
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     # Borders
                     ("BOX", (0, 0), (-1, -1), 0.5, colors.black),

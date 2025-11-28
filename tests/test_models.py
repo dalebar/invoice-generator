@@ -83,13 +83,32 @@ class TestLineItem:
         item = LineItem("Test description", Decimal("100.00"))
         assert item.description == "Test description"
         assert item.amount == Decimal("100.00")
+        assert item.quantity == 1  # Default
+
+    def test_create_line_item_with_quantity(self):
+        """Test that LineItem can be created with quantity."""
+        item = LineItem("Day Rate", Decimal("100.00"), 5)
+        assert item.description == "Day Rate"
+        assert item.amount == Decimal("100.00")
+        assert item.quantity == 5
+
+    def test_line_item_line_total(self):
+        """Test that line_total calculates correctly."""
+        item1 = LineItem("Test", Decimal("100.00"), 1)
+        assert item1.line_total == Decimal("100.00")
+
+        item2 = LineItem("Day Rate", Decimal("100.00"), 5)
+        assert item2.line_total == Decimal("500.00")
+
+        item3 = LineItem("Hourly", Decimal("25.50"), 3)
+        assert item3.line_total == Decimal("76.50")
 
     def test_line_item_is_dataclass(self):
         """Test that LineItem is a proper dataclass."""
         item = LineItem("Test", Decimal("50.00"))
         data = asdict(item)
         assert isinstance(data, dict)
-        assert len(data) == 2
+        assert len(data) == 3  # description, amount, quantity
 
 
 class TestInvoice:
@@ -186,3 +205,22 @@ class TestInvoice:
         )
         assert invoice.subtotal == Decimal("100.00")
         assert invoice.total == Decimal("100.00")
+
+    def test_invoice_with_quantities(self, business_details, client_details):
+        """Test invoice with line item quantities calculates correctly."""
+        line_items = [
+            LineItem("Day Rate", Decimal("100.00"), 5),
+            LineItem("Hourly Rate", Decimal("25.00"), 4),
+            LineItem("Fixed Fee", Decimal("50.00"), 1),
+        ]
+        invoice = Invoice(
+            invoice_number="INV0003",
+            issue_date=date.today(),
+            due_date=date.today(),
+            business=business_details,
+            client=client_details,
+            line_items=line_items,
+        )
+        # 100*5 + 25*4 + 50*1 = 500 + 100 + 50 = 650
+        assert invoice.subtotal == Decimal("650.00")
+        assert invoice.total == Decimal("650.00")

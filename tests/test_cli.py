@@ -217,6 +217,7 @@ class TestInteractiveMode:
             "M1 1AA",           # Postcode
             "Waste removal",     # Item 1 description
             "150.00",           # Item 1 amount
+            "",                 # Item 1 quantity (default 1)
             "",                 # Finish adding items
             "y",                # Due on receipt
         ]
@@ -256,6 +257,7 @@ class TestInteractiveMode:
             "SW1A 1AA",         # Postcode
             "Garden clearance",  # Item 1 description
             "200.00",           # Item 1 amount
+            "",                 # Item 1 quantity (default 1)
             "",                 # Finish adding items
             "y",                # Due on receipt
         ]
@@ -292,6 +294,7 @@ class TestInteractiveMode:
             "M1 1AA",
             "Job {}",
             "100.00",
+            "",  # Quantity (default 1)
             "",  # Finish items
             "y",
         ]
@@ -339,6 +342,7 @@ class TestInteractiveMode:
             "abc",               # Invalid amount
             "-50",               # Invalid amount (negative)
             "100.00",           # Valid amount
+            "",                 # Quantity (default 1)
             "",                 # Finish adding items
             "y",
         ]
