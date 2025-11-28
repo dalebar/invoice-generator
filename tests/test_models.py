@@ -26,7 +26,7 @@ class TestBusinessDetails:
         """Test that BusinessDetails is a proper dataclass."""
         data = asdict(business_details)
         assert isinstance(data, dict)
-        assert len(data) == 7
+        assert len(data) == 8  # Including optional invoice_output_dir field
 
     def test_business_details_equality(self):
         """Test that two identical BusinessDetails are equal."""

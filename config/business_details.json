@@ -5,5 +5,6 @@
     "postcode": "SK4 2QN",
     "email": "dalewithvan@gmail.com",
     "sort_code": "04-00-04",
-    "account_number": "53377826"
+    "account_number": "53377826",
+    "invoice_output_dir": "/Users/daleb/Documents/001/invoices"
 }

@@ -64,6 +64,7 @@ def load_business_details(config_path: str = None) -> BusinessDetails:
         email=data["email"],
         sort_code=data["sort_code"],
         account_number=data["account_number"],
+        invoice_output_dir=data.get("invoice_output_dir"),  # Optional field
     )
 
 

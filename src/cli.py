@@ -120,7 +120,10 @@ class InvoiceCLI:
         name_for_file = company if company else client_name
         safe_name = self._sanitize_filename(name_for_file)
         filename = f"{invoice_number}_{safe_name}.pdf"
-        output_path = f"invoices/{filename}"
+
+        # Use custom output directory if specified, otherwise default to 'invoices/'
+        output_dir = self.generator.business.invoice_output_dir or "invoices"
+        output_path = f"{output_dir}/{filename}"
 
         # Generate PDF
         self.generator.generate(invoice, output_path)

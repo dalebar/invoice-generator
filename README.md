@@ -179,6 +179,34 @@ invoice-generator/
 
 Edit `config/business_details.json` to update your business details. The application will automatically find this file regardless of where you run the command from.
 
+### Required Fields
+
+- `name` - Your business name
+- `address_line1` - Your business address
+- `city` - Your city
+- `postcode` - Your postcode
+- `email` - Your business email
+- `sort_code` - Your bank sort code
+- `account_number` - Your bank account number
+
+### Optional Fields
+
+- `invoice_output_dir` - Custom directory for invoice PDFs (defaults to `invoices/` in project directory)
+
+**Example:**
+```json
+{
+  "name": "John Smith Trading",
+  "address_line1": "123 Business Street",
+  "city": "Manchester",
+  "postcode": "M1 1AA",
+  "email": "john@smithtrading.co.uk",
+  "sort_code": "12-34-56",
+  "account_number": "12345678",
+  "invoice_output_dir": "/Users/john/Documents/invoices"
+}
+```
+
 ## How It Works
 
 The `invoice-generator` command automatically:

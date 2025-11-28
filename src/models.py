@@ -16,6 +16,7 @@ class BusinessDetails:
     email: str
     sort_code: str
     account_number: str
+    invoice_output_dir: str = None  # Optional custom output directory for invoices
 
 
 @dataclass
